@@ -1,7 +1,7 @@
 create table public.oshis (
   id uuid primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  artist_id uuid references public.artists(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  artist_id uuid references public.artists(id) on delete cascade  not null,
   image_url text,
   memo text,
   color varchar(10) not null,
@@ -11,10 +11,16 @@ create table public.oshis (
   deleted_at TIMESTAMP
 );
 
+create unique index idx_unique_artist_and_user_in_oshis 
+  on oshis (artist_id, user_id) 
+  where deleted_at is null;
+
 -- oshisテーブルRLS設定
 alter table oshis enable row level security;
 create policy "allow select for all authenticated users" on public.oshis for select using (auth.role() = 'authenticated');
 create policy "allow update for users themselves" on public.oshis for update using (auth.uid() = user_id);
+create policy "allow insert for users themselves" on public.oshis for insert with check (auth.uid() = user_id);
+create policy "allow delete for users themselves" on public.oshis for delete using (auth.uid() = user_id);
 
 -- updated_atを更新する関数
 create or replace function update_modified_column()

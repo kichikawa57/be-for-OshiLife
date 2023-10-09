@@ -1,8 +1,8 @@
 create table public.schedules (
   id uuid primary key,
-  user_id uuid references public.profiles(id) on delete cascade,
-  oshi_id uuid references public.oshis(id) on delete cascade,
-  title text,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  oshi_id uuid references public.oshis(id) on delete cascade not null,
+  title text not null,
   memo text,
   start_at TIMESTAMP DEFAULT now() not null,
   end_at TIMESTAMP DEFAULT now() not null,
@@ -16,6 +16,8 @@ create table public.schedules (
 alter table public.schedules enable row level security;
 create policy "allow select for all authenticated users" on public.schedules for select using (auth.role() = 'authenticated');
 create policy "allow update for users themselves" on public.schedules for update using (auth.uid() = user_id);
+create policy "allow insert for users themselves" on public.schedules for insert with check (auth.uid() = user_id);
+create policy "allow delete for users themselves" on public.schedules for delete using (auth.uid() = user_id);
 
 -- updated_atを更新する関数
 create or replace function update_modified_column()
